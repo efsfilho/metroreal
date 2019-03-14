@@ -4,77 +4,49 @@ import os
 import datetime
 import telegram
 import logging
-import urllib.request
-import json
-import schedule
 import time
-
+from watcher import Watcher
 from telegram.ext import CommandHandler
 from telegram.ext import Updater
 
-class MetroTimer:
+# logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-    started = False
-    executed = 0
+# apikey = os.environ['b1']
 
-    # timeout em minutos
-    def __init__(self, timeoutMin=30):
-        self.executed = 0
-        self.timeoutMin = timeoutMin
+# updater = Updater(token=apikey)
+# dispatcher = updater.dispatcher
 
-    def job(self):
-        print('test...',self.executed,' ',datetime.datetime.now())
+# def eco(bot, update):
+#   logging.debug('eco debug');
+#   watcher.teste()
+#   bot.send_message(chat_id=update.message.chat_id, text='eco')
 
+# def ini(bot, update):
+#   watcher.start()
 
-    def start(self):
-        self.started = True
-        schedule.every(self.timeoutMin).minute.do(self.job)
-        while self.started:
-            schedule.run_pending()
-            time.sleep(1)
+# dispatcher.add_handler(CommandHandler('eco', eco))
+# dispatcher.add_handler(CommandHandler('ini', ini))
+# updater.start_polling() 
+# print('key '+apikey)
+
+def test1():
+    print('1 '+time.strftime("%a, %d %b %Y %H:%M:%S"))
+def test2():
+    print('2 '+time.strftime("%a, %d %b %Y %H:%M:%S"))
+
+w = Watcher()
+while 1:
+    command = input()
+    if command == 'start':
+        w.start()        
+    if command == 'status':
+        print(w.is_alive())
+    if command == 'stop':
+        w.stop()
+    if command == '1':
+        w.addJob(test1)
+    if command == '2':
+        w.addJob(test2)
+    if command == 'clear':
+        w.clear()
     
-    def stop(self):
-        self.started = False
-
-url = ''
-apikey = ''
-
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-updater = Updater(token=apikey)
-dispatcher = updater.dispatcher
-
-def eco(bot, update):
-  print(datetime.datetime.now(), 'eco')
-  bot.send_message(chat_id=update.message.chat_id, text='eco')
-
-
-def status(bot, update):
-    bot.send_message(chat_id=update.message.chat_id, text=getStatus())    
-
-def getStatus():
-    res = ''
-    try:
-        data = urllib.request.urlopen(url).read()
-        status = json.loads(data.decode('utf-8'))
-
-        l1 = status['StatusMetro']['ListLineStatus'][0]
-        l2 = status['StatusMetro']['ListLineStatus'][1]
-        l3 = status['StatusMetro']['ListLineStatus'][2]
-        mu = status['StatusMetro']['DateUpdateMetro']
-        l4 = status['CurrentLineStatus']['Status']
-
-        res += 'Linha 1 - '+l1['StatusMetro']+' (atualizado: '+mu+')\n'
-        res += 'Linha 2 - '+l2['StatusMetro']+' (atualizado: '+mu+')\n'
-        res += 'Linha 3 - '+l3['StatusMetro']+' (atualizado: '+mu+')\n'
-        res += 'Linha 4 - '+l4+' (atualizado: '+status['CurrentLineStatus']['DateUpdateFormated']+')'
-
-    except:
-        res = 'Erro ao executar a consulta.'
-
-    return res
-
-dispatcher.add_handler(CommandHandler('eco', eco))
-dispatcher.add_handler(CommandHandler('status', status))
-
-updater.start_polling() 
