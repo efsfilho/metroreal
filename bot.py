@@ -3,7 +3,7 @@
 import os
 import datetime
 import telegram
-import logging
+# import logging
 import time
 from watcher import Watcher
 from telegram.ext import CommandHandler
@@ -44,9 +44,11 @@ while 1:
     if command == 'stop':
         w.stop()
     if command == '1':
-        w.addJob(test1)
+        w.addJob(test1, '1')
     if command == '2':
-        w.addJob(test2)
-    if command == 'clear':
-        w.clear()
+        w.addJob(test2, '2')
+    if command == 'c1':
+        w.clear('1')
+    if command == 'c2':
+        w.clear('2')
     
