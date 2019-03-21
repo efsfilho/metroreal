@@ -24,19 +24,6 @@ def writeJson(data):
         json.dump(data, outfile, ensure_ascii=False)
         outfile.write('\n')
 
-def getData():
-    global status
-    data = urllib.request.urlopen('https://www.diretodostrens.com.br/api/status').read()
-    status = json.loads(data.decode('utf-8'))
-    strdatetime = dateformat(time.gmtime())
-    print(strdatetime)
-    for linha in status:
-        if ('situacao' in linha) and (linha['situacao'] != 'Operação Normal'):
-            writeJson(linha)
-
-# schedule.every(30).minutes.do(getData)
-# schedule.every(10).seconds.do(getData)
-
 class Watcher(Thread):
 
     def __init__(self):
@@ -51,9 +38,9 @@ class Watcher(Thread):
         self._running = True
         logging.info('Watcher started!')
 
-        # schedule.every().day.at('04:00').do(self._startWatcher)
-        # schedule.every().day.at('22:00').do(self._stopWatcher)
-        self._startWatcher()
+        schedule.every().day.at('04:00').do(self._startWatcher)
+        schedule.every().day.at('22:00').do(self._stopWatcher)
+        # self._startWatcher()
 
         while self._running:
             schedule.run_pending()
@@ -64,7 +51,6 @@ class Watcher(Thread):
     def _updateDataStatus(self):
         data = None
         try:
-            # req = urllib.request.urlopen('https://sdfldsjkhgalsdjg')
             req = urllib.request.urlopen('https://www.diretodostrens.com.br/api/status')
             data = json.loads(req.read().decode('utf-8'))
         except urllib.error.HTTPError as err:
@@ -73,7 +59,6 @@ class Watcher(Thread):
             logging.error('watcher > _updateDataStatus > Request error: '+str(err.reason))
         except json.decoder.JSONDecodeError as err:
             logging.error('watcher > _updateDataStatus > JSON decode error: '+ str(err))
-            # logging.error('JSON decode error: ', exc_info=True)
         finally:
             if data != None:
                 self._dataStatus = data
@@ -82,20 +67,14 @@ class Watcher(Thread):
                         logging.debug(linha)
 
     def _startWatcher(self):
-        # schedule.every().hour.at(':30').tag(self._updateJobTag).do(self._updateDataStatus)
-
         schedule.every(30).minutes.tag(self._updateJobTag).do(self._updateDataStatus)
-        # schedule.every(10).seconds.tag(self._updateJobTag).do(self._updateDataStatus)
-        # schedule.every(1).hour.tag(self._updateJobTag).do(self._updateDataStatus)
-        # schedule.every(10).seconds.tag(self._updateJobTag).do(self._updateDataStatus)
-        # logging.debug('_startWatcher')
 
     def _stopWatcher(self):
         schedule.clear(self._updateJobTag)
 
     def clear(self, tag=None):
         schedule.clear(tag)
-
+        
     def stop(self):
         self._running = False
 

@@ -3,13 +3,22 @@
 import os
 import datetime
 import telegram
-# import logging
 import time
 from watcher import Watcher
 from telegram.ext import CommandHandler
 from telegram.ext import Updater
 
-# logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+# import logging
+# log_format = '%(asctime)s - %(name)s - [%(levelname)-7s] - %(message)s'
+# logging.basicConfig(filename='log.log', filemode='a+', level=logging.INFO, format=log_format)
+
+# consoleHandler = logging.StreamHandler()
+# consoleHandler.setFormatter(logging.Formatter(log_format))
+# logging.getLogger().addHandler(consoleHandler)
+
+# logging.debug('BOT debug')
+# logging.info('BOT')
+# logging.warning('BOT WARNINGSFDSFDF')
 
 # apikey = os.environ['b1']
 
@@ -30,15 +39,16 @@ from telegram.ext import Updater
 # print('key '+apikey)
 
 def test1():
-    print('1 '+time.strftime("%a, %d %b %Y %H:%M:%S"))
+    print('1 '+time.strftime('%a, %d %b %Y %H:%M:%S'))
 def test2():
-    print('2 '+time.strftime("%a, %d %b %Y %H:%M:%S"))
+    print('2 '+time.strftime('%a, %d %b %Y %H:%M:%S'))
 
 w = Watcher()
-while 1:
+loop = True
+while loop:
     command = input()
     if command == 'start':
-        w.start()        
+        w.start()
     if command == 'status':
         print(w.is_alive())
     if command == 'stop':
@@ -51,4 +61,6 @@ while 1:
         w.clear('1')
     if command == 'c2':
         w.clear('2')
-    
+    if command == 'exit':
+        loop = False
+
