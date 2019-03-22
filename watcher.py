@@ -13,13 +13,10 @@ consoleHandler = logging.StreamHandler()
 consoleHandler.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(consoleHandler)
 
-# status = [{"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:00.334477Z", "criado": "2019-02-19T07:41:00.803549Z", "codigo": 1, "id": 5098819247144960}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:00.337420Z", "criado": "2019-02-19T07:41:00.858902Z", "codigo": 2, "id": 6289236323991552}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:00.340037Z", "criado": "2019-02-19T07:41:00.877520Z", "codigo": 3, "id": 5698936018829312}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:01.269863Z", "criado": "2019-02-19T07:41:00.804018Z", "codigo": 4, "id": 5714949670174720}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:01.152332Z", "criado": "2019-02-19T08:50:01.445111Z", "codigo": 5, "id": 5135986065408000}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:16.744557Z", "criado": "2019-02-19T07:01:01.103122Z", "codigo": 7, "id": 5709513986408448}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:16.755445Z", "criado": "2019-02-19T08:32:00.127045Z", "codigo": 8, "id": 5650211980443648}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:16.831433Z", "criado": "2019-02-19T07:01:01.207293Z", "codigo": 9, "id": 5641694707974144}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:16.834635Z", "criado": "2019-02-19T07:01:01.305430Z", "codigo": 10, "id": 5089750893461504}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:16.837476Z", "criado": "2019-02-19T07:01:01.356346Z", "codigo": 11, "id": 5675522809921536}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:16.839961Z", "criado": "2019-02-19T07:01:01.441655Z", "codigo": 12, "id": 5651304160428032}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:16.842331Z", "criado": "2019-02-19T07:01:01.524086Z", "codigo": 13, "id": 5728427093000192}, {"situacao": "Operação Normal", "modificado": "2019-02-19T14:09:00.342879Z", "criado": "2019-02-19T07:41:00.932501Z", "codigo": 15, "id": 5678845319446528}]
-status = []
-
 def dateformat(dt):
     return time.strftime("%a, %d %b %Y %H:%M:%S", dt)
 
-def writeJson(data):    
+def writeJson(data):
     with open('data.json', 'a', encoding='utf-8') as outfile:
         json.dump(data, outfile, ensure_ascii=False)
         outfile.write('\n')
@@ -30,23 +27,62 @@ class Watcher(Thread):
         Thread.__init__(self)
         self._running = False
         self._dataStatus = []
-        self._updateJobTag = 'updateJob'
+
+        self._mainTaskTag = 'updateTask'
+        self._mainTaskInterval = 2 # minutos
+
+        self._rushTaskTag = 'rushTask'
+        self._rushTaskInterval = 1 # minutos
 
     def run(self):
         if self._running:
             return
         self._running = True
         logging.info('Watcher started!')
-
-        schedule.every().day.at('04:00').do(self._startWatcher)
-        schedule.every().day.at('22:00').do(self._stopWatcher)
-        # self._startWatcher()
+        
+        self._setSchedule()
 
         while self._running:
             schedule.run_pending()
             time.sleep(1)
 
         logging.info('Watcher finished!')
+
+    def _setSchedule(self):
+        """
+        1 - inicia o watcher normal: _startWatcher
+        2 - para o watcher normal e inicia o watcher rush: _startRushWatcher
+        3 - para o watcher rush e inicia o watcher normal: _stopRushWatcher 
+        4 - para o watcher normal: _stopWatcher
+        """
+
+        # 1  normal  2  rush  3  normal  4
+        # [----------[========]----------]
+        schedule.every().day.at('04:00').do(self._startWatcher)     # 1
+        schedule.every().day.at('22:00').do(self._stopWatcher)      # 4
+        schedule.every().day.at('16:50').do(self._startRushWatcher) # 2
+        schedule.every().day.at('19:00').do(self._stopRushWatcher)  # 3
+
+    def _startWatcher(self):
+        jobTag = self._mainTaskTag
+        interval = self._mainTaskInterval
+        schedule.every(interval).minutes.tag(jobTag).do(self._updateDataStatus)
+
+    def _stopWatcher(self):
+        schedule.clear(self._mainTaskTag)
+
+    def _startRushWatcher(self):
+        jobTag = self._rushTaskTag
+        interval = self._rushTaskInterval
+        self._stopWatcher()
+        schedule.every(interval).minutes.tag(jobTag).do(self._updateDataStatus)
+
+    def _stopRushWatcher(self):
+        schedule.clear(self._rushTaskTag)
+        self._startWatcher()
+
+    def clear(self, tag=None):
+        schedule.clear(tag)
 
     def _updateDataStatus(self):
         data = None
@@ -66,18 +102,5 @@ class Watcher(Thread):
                     if ('situacao' in linha) and (linha['situacao'] != 'Operação Normal'):
                         logging.debug(linha)
 
-    def _startWatcher(self):
-        schedule.every(30).minutes.tag(self._updateJobTag).do(self._updateDataStatus)
-
-    def _stopWatcher(self):
-        schedule.clear(self._updateJobTag)
-
-    def clear(self, tag=None):
-        schedule.clear(tag)
-        
     def stop(self):
         self._running = False
-
-
-
-
