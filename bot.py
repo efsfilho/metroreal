@@ -5,62 +5,79 @@ import datetime
 import telegram
 import time
 from watcher import Watcher
-from telegram.ext import CommandHandler
-from telegram.ext import Updater
+from telegram.ext import CommandHandler, Updater
 
-# import logging
-# log_format = '%(asctime)s - %(name)s - [%(levelname)-7s] - %(message)s'
-# logging.basicConfig(filename='log.log', filemode='a+', level=logging.INFO, format=log_format)
+# TODO logging
+import logging
+log_format = '%(asctime)s - %(name)s - [%(levelname)-7s] - %(message)s'
+logging.basicConfig(filename='log.log', filemode='a+', level=logging.INFO, format=log_format)
 
-# consoleHandler = logging.StreamHandler()
-# consoleHandler.setFormatter(logging.Formatter(log_format))
-# logging.getLogger().addHandler(consoleHandler)
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logging.Formatter(log_format))
+logging.getLogger().addHandler(consoleHandler)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
-# logging.debug('BOT debug')
-# logging.info('BOT')
-# logging.warning('BOT WARNINGSFDSFDF')
+apikey = os.environ['b1']
 
-# apikey = os.environ['b1']
-
-# updater = Updater(token=apikey)
-# dispatcher = updater.dispatcher
-
-# def eco(bot, update):
-#   logging.debug('eco debug');
-#   watcher.teste()
-#   bot.send_message(chat_id=update.message.chat_id, text='eco')
-
-# def ini(bot, update):
-#   watcher.start()
-
-# dispatcher.add_handler(CommandHandler('eco', eco))
-# dispatcher.add_handler(CommandHandler('ini', ini))
-# updater.start_polling() 
-# print('key '+apikey)
-
-def test1():
-    print('1 '+time.strftime('%a, %d %b %Y %H:%M:%S'))
-def test2():
-    print('2 '+time.strftime('%a, %d %b %Y %H:%M:%S'))
+updater = Updater(token=apikey)
+dispatcher = updater.dispatcher
 
 w = Watcher()
-loop = True
-while loop:
-    command = input()
-    if command == 'start':
-        w.start()
-    if command == 'status':
-        print(w.is_alive())
-    if command == 'stop':
+
+def start(bot, update):
+    w.start()
+    bot.send_message(chat_id=update.message.chat_id, text='ecossss')
+
+def status(bot, update):
+    status = w.is_alive()
+    status = 's'
+    bot.send_message(chat_id=update.message.chat_id, text=status)
+
+def stop(bot, update):
+    if w.is_alive():
         w.stop()
-    if command == '1':
-        w.addJob(test1, '1')
-    if command == '2':
-        w.addJob(test2, '2')
-    if command == 'c1':
-        w.clear('1')
-    if command == 'c2':
-        w.clear('2')
-    if command == 'exit':
-        loop = False
+    status(bot, update)
+
+def eco(bot, update):
+  logging.debug('eco debug');
+  bot.send_message(chat_id=update.message.chat_id, text='ecossss')
+
+def ini(bot, update):
+  logging.info('ininin');
+
+dispatcher.add_handler(CommandHandler('eco', eco))
+dispatcher.add_handler(CommandHandler('start', start))
+dispatcher.add_handler(CommandHandler('status', status))
+dispatcher.add_handler(CommandHandler('stop', stop))
+
+updater.start_polling() 
+print('key '+apikey)
+
+
+# w = Watcher(interval=4, startTime='17:31', stopTime='17:30', rushInterval=2,
+#             rushStartTime='16:55', rushStopTime='16:57')
+# w = Watcher()
+# loop = True
+# while loop:
+#     command = input()
+#     if command == 'start':
+#         w.start()
+#     if command == 'status':
+#         print(w.is_alive())
+#     if command == 'stop':
+#         w.stop()
+#     if command == 'c1':
+#         w.clear('updateJob')
+    # if command == 'exit':
+    #     if w.is_alive():
+    #         w.stop()
+    #     loop = False
+
+
+
+
+
+
+
 
