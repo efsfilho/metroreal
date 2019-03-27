@@ -3,10 +3,11 @@ import json
 import schedule
 import urllib.request
 import datetime
+import logging
 from threading import Thread
 
-import logging
-log_format = '%(asctime)s - [%(name)-10s] - [%(levelname)-7s] - %(message)s'
+import random
+log_format = '%(asctime)s - [%(levelname)-7s] - [%(name)-6s] - %(funcName)s() %(message)s'
 logging.basicConfig(filename='log.log', filemode='a+', level=logging.DEBUG, format=log_format)
 
 consoleHandler = logging.StreamHandler()
@@ -99,6 +100,7 @@ class Watcher(Thread):
         schedule.every().day.at(self._rushTaskStartTimeStr).do(self._startRushWatcher) # 2
         schedule.every().day.at(self._rushTaskStopTimeStr).do(self._stopRushWatcher)   # 3
 
+        # Força o start
         dt = datetime.datetime.utcnow()
         if dt.hour > 4:
             self._startWatcher()
@@ -108,12 +110,12 @@ class Watcher(Thread):
         interval = self._taskInterval
         # schedule.every(interval).minutes.tag(jobTag).do(self._updateDataStatus)
         schedule.every(interval).seconds.tag(jobTag).do(self._updateDataStatus)
-        logging.info(f'_startWatcher: jobTag={jobTag} interval={interval}(min)')
+        logging.info(f'jobTag={jobTag} interval={interval}(min)')
 
     def _stopWatcher(self):
         jobTag = self._taskTag
-        schedule.clear(jobTag)
-        logging.info(f'_stopWatcher: jobTag={jobTag}')
+        self._clear(jobTag)
+        logging.info(f'jobTag={jobTag}')
 
     def _startRushWatcher(self):
         jobTag = self._rushTaskTag
@@ -121,20 +123,22 @@ class Watcher(Thread):
         self._stopWatcher()
         # schedule.every(interval).minutes.tag(jobTag).do(self._updateDataStatus)
         schedule.every(interval).seconds.tag(jobTag).do(self._updateDataStatus)
-        logging.info(f'_startRushWatcher: jobTag={jobTag} interval={interval}(min)')
+        logging.info(f'jobTag={jobTag} interval={interval}(min)')
 
     def _stopRushWatcher(self):
         jobTag = self._rushTaskTag
-        schedule.clear(jobTag)
+        self._clear(jobTag)
         self._startWatcher()
-        logging.info(f'_stopRushWatcher: jobTag={jobTag}')
+        logging.info(f'jobTag={jobTag}')
         
 
-    def clear(self, tag=None):
+    def _clear(self, tag=None):
         schedule.clear(tag)
 
     def _updateDataStatus(self):
-        logging.info('_updateDataStatus')
+        i = random.randint(1, 100)*5
+        self._dataStatus = i
+        logging.debug(f'update: {i}')
         # data = None
         # try:
         #     req = urllib.request.urlopen('https://www.diretodostrens.com.br/api/status')
@@ -154,3 +158,6 @@ class Watcher(Thread):
 
     def stop(self):
         self._running = False
+
+    def getStatus(self):
+        return self._dataStatus
